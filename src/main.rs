@@ -17,6 +17,9 @@ use uefi::proto::BootPolicy;
 use uefi::{guid, prelude::*, CStr16};
 use uefi::{Identify, Result};
 
+use include_bytes_plus::include_bytes;
+
+const LINUX_LOADER: [u8; 614400] = include_bytes!("LinuxLoader.efi");
 const BOOTAA64_PATH: &CStr16 = cstr16!(r"\EFI\BOOT\BOOTAA64.EFI");
 
 // Global pointer to store the DisplayPowerProtocol
@@ -29,6 +32,20 @@ fn connect_all() -> Result {
     }
 
     Ok(())
+}
+
+fn load_linux_loader() -> Handle {
+    info!("No bootaa64.efi found... fallingback to LinuxLoader.efi");
+
+    let image = boot::load_image(
+        boot::image_handle(),
+        LoadImageSource::FromBuffer {
+            buffer: &LINUX_LOADER,
+            file_path: None,
+        },
+    ).expect("Failed to load LinuxLoader.efi");
+
+    return image;
 }
 
 fn load_bootaa64() -> Result<Option<Handle>> {
@@ -281,7 +298,7 @@ fn main() -> Status {
 
     let image = load_bootaa64()
         .expect("An error occurred while searching for bootaa64.efi")
-        .expect("No bootaa64.efi found");
+        .unwrap_or_else(|| load_linux_loader());
 
     info!("Found bootaa64.efi, starting..");
     boot::start_image(image).expect("Failed to start bootaa64.efi");
