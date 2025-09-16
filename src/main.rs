@@ -35,7 +35,8 @@ fn connect_all() -> Result {
 }
 
 fn load_linux_loader() -> Handle {
-    info!("No bootaa64.efi found... fallingback to LinuxLoader.efi");
+    info!("No bootaa64.efi found...");
+    info!("Fallingback to LinuxLoader.efi");
 
     let image = boot::load_image(
         boot::image_handle(),
